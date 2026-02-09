@@ -1,0 +1,401 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// TABLE MANAGEMENT & FLOOR LAYOUT
+// ============================================
+
+model FloorPlan {
+  id            String   @id @default(cuid())
+  name          String
+  restaurantId  String
+  layout        Json     // Stores table positions, shapes, etc.
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  tables        Table[]
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  
+  @@index([restaurantId])
+}
+
+model Table {
+  id            String      @id @default(cuid())
+  number        String
+  floorPlanId   String
+  capacity      Int
+  minCapacity   Int         @default(1)
+  x             Float       // X position on floor plan
+  y             Float       // Y position on floor plan
+  width         Float       @default(100)
+  height        Float       @default(100)
+  shape         TableShape  @default(SQUARE)
+  section       String?     // Server section assignment
+  status        TableStatus @default(AVAILABLE)
+  currentOrder  String?     @unique
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  floorPlan     FloorPlan   @relation(fields: [floorPlanId], references: [id], onDelete: Cascade)
+  orders        Order[]
+  
+  @@unique([floorPlanId, number])
+  @@index([floorPlanId])
+  @@index([status])
+  @@index([section])
+}
+
+enum TableShape {
+  SQUARE
+  RECTANGLE
+  CIRCLE
+  BOOTH
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  DIRTY
+  CLEANING
+}
+
+// ============================================
+// ORDER MANAGEMENT
+// ============================================
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     Int           @unique @default(autoincrement())
+  tableId         String?
+  restaurantId    String
+  serverId        String
+  customerCount   Int
+  status          OrderStatus   @default(OPEN)
+  type            OrderType     @default(DINE_IN)
+  subtotal        Decimal       @db.Decimal(10, 2)
+  tax             Decimal       @db.Decimal(10, 2)
+  total           Decimal       @db.Decimal(10, 2)
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  completedAt     DateTime?
+  
+  table           Table?        @relation(fields: [tableId], references: [id])
+  restaurant      Restaurant    @relation(fields: [restaurantId], references: [id])
+  server          Employee      @relation("ServerOrders", fields: [serverId], references: [id])
+  items           OrderItem[]
+  payments        Payment[]
+  modifications   OrderModification[]
+  
+  @@index([restaurantId])
+  @@index([tableId])
+  @@index([serverId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id              String            @id @default(cuid())
+  orderId         String
+  menuItemId      String
+  quantity        Int
+  unitPrice       Decimal           @db.Decimal(10, 2)
+  total           Decimal           @db.Decimal(10, 2)
+  seatNumber      Int?              // For split by seat
+  status          OrderItemStatus   @default(PENDING)
+  course          CourseType        @default(ENTREE)
+  specialInstructions String?
+  sentToKitchenAt DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime          @default(now())
+  
+  order           Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem        MenuItem          @relation(fields: [menuItemId], references: [id])
+  modifiers       OrderItemModifier[]
+  
+  @@index([orderId])
+  @@index([menuItemId])
+  @@index([status])
+}
+
+model OrderItemModifier {
+  id              String    @id @default(cuid())
+  orderItemId     String
+  modifierId      String
+  quantity        Int       @default(1)
+  price           Decimal   @db.Decimal(10, 2)
+  
+  orderItem       OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  modifier        Modifier  @relation(fields: [modifierId], references: [id])
+  
+  @@index([orderItemId])
+}
+
+enum OrderStatus {
+  OPEN
+  IN_PROGRESS
+  READY
+  COMPLETED
+  CANCELLED
+  VOID
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEOUT
+  DELIVERY
+  CATERING
+}
+
+enum OrderItemStatus {
+  PENDING
+  SENT_TO_KITCHEN
+  PREPARING
+  READY
+  SERVED
+  CANCELLED
+}
+
+enum CourseType {
+  APPETIZER
+  SALAD
+  SOUP
+  ENTREE
+  SIDE
+  DESSERT
+  BEVERAGE
+}
+
+// ============================================
+// MENU MANAGEMENT
+// ============================================
+
+model MenuItem {
+  id              String      @id @default(cuid())
+  name            String
+  description     String?
+  categoryId      String
+  price           Decimal     @db.Decimal(10, 2)
+  cost            Decimal?    @db.Decimal(10, 2) // Cost for inventory tracking
+  imageUrl        String?
+  isAvailable     Boolean     @default(true)
+  is86d           Boolean     @default(false) // Temporarily out of stock
+  preparationTime Int?        // Minutes
+  restaurantId    String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  category        Category    @relation(fields: [categoryId], references: [id])
+  restaurant      Restaurant  @relation(fields: [restaurantId], references: [id])
+  modifiers       ModifierGroup[]
+  orderItems      OrderItem[]
+  inventoryItems  InventoryItem[]
+  
+  @@index([restaurantId])
+  @@index([categoryId])
+  @@index([isAvailable])
+}
+
+model Category {
+  id              String      @id @default(cuid())
+  name            String
+  displayOrder    Int
+  restaurantId    String
+  createdAt       DateTime    @default(now())
+  
+  restaurant      Restaurant  @relation(fields: [restaurantId], references: [id])
+  menuItems       MenuItem[]
+  
+  @@index([restaurantId])
+}
+
+model ModifierGroup {
+  id              String      @id @default(cuid())
+  name            String
+  minSelections   Int         @default(0)
+  maxSelections   Int?
+  isRequired      Boolean     @default(false)
+  menuItemId      String
+  
+  menuItem        MenuItem    @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  modifiers       Modifier[]
+  
+  @@index([menuItemId])
+}
+
+model Modifier {
+  id              String              @id @default(cuid())
+  name            String
+  price           Decimal             @db.Decimal(10, 2)
+  modifierGroupId String
+  
+  modifierGroup   ModifierGroup       @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+  orderItemModifiers OrderItemModifier[]
+  
+  @@index([modifierGroupId])
+}
+
+// ============================================
+// PAYMENT MANAGEMENT
+// ============================================
+
+model Payment {
+  id              String        @id @default(cuid())
+  orderId         String
+  amount          Decimal       @db.Decimal(10, 2)
+  tipAmount       Decimal       @db.Decimal(10, 2) @default(0)
+  method          PaymentMethod
+  status          PaymentStatus @default(PENDING)
+  transactionId   String?       // Stripe/payment processor ID
+  splitNumber     Int?          // For split payments
+  processedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  
+  order           Order         @relation(fields: [orderId], references: [id])
+  
+  @@index([orderId])
+  @@index([status])
+}
+
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  MOBILE_PAY
+  GIFT_CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// ============================================
+// EMPLOYEE MANAGEMENT
+// ============================================
+
+model Employee {
+  id              String      @id @default(cuid())
+  firstName       String
+  lastName        String
+  email           String      @unique
+  phone           String?
+  role            EmployeeRole
+  pin             String      // For quick clock-in
+  passwordHash    String
+  restaurantId    String
+  isActive        Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  restaurant      Restaurant  @relation(fields: [restaurantId], references: [id])
+  orders          Order[]     @relation("ServerOrders")
+  timeEntries     TimeEntry[]
+  modifications   OrderModification[]
+  
+  @@index([restaurantId])
+  @@index([email])
+}
+
+enum EmployeeRole {
+  ADMIN
+  MANAGER
+  SERVER
+  BARTENDER
+  HOST
+  KITCHEN
+  CASHIER
+}
+
+model TimeEntry {
+  id              String    @id @default(cuid())
+  employeeId      String
+  clockIn         DateTime
+  clockOut        DateTime?
+  hoursWorked     Decimal?  @db.Decimal(5, 2)
+  createdAt       DateTime  @default(now())
+  
+  employee        Employee  @relation(fields: [employeeId], references: [id])
+  
+  @@index([employeeId])
+  @@index([clockIn])
+}
+
+// ============================================
+// INVENTORY MANAGEMENT
+// ============================================
+
+model InventoryItem {
+  id              String      @id @default(cuid())
+  name            String
+  sku             String?
+  quantity        Decimal     @db.Decimal(10, 2)
+  unit            String      // oz, lb, each, etc.
+  reorderPoint    Decimal     @db.Decimal(10, 2)
+  costPerUnit     Decimal     @db.Decimal(10, 2)
+  restaurantId    String
+  menuItemId      String?
+  lastRestocked   DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  restaurant      Restaurant  @relation(fields: [restaurantId], references: [id])
+  menuItem        MenuItem?   @relation(fields: [menuItemId], references: [id])
+  
+  @@index([restaurantId])
+  @@index([quantity])
+}
+
+// ============================================
+// RESTAURANT & AUDIT
+// ============================================
+
+model Restaurant {
+  id              String      @id @default(cuid())
+  name            String
+  address         String
+  phone           String
+  email           String
+  timezone        String      @default("America/New_York")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  floorPlans      FloorPlan[]
+  employees       Employee[]
+  orders          Order[]
+  menuItems       MenuItem[]
+  categories      Category[]
+  inventory       InventoryItem[]
+}
+
+model OrderModification {
+  id              String      @id @default(cuid())
+  orderId         String
+  employeeId      String
+  action          String      // "void_item", "discount", "split", etc.
+  reason          String?
+  oldValue        Json?
+  newValue        Json?
+  createdAt       DateTime    @default(now())
+  
+  order           Order       @relation(fields: [orderId], references: [id])
+  employee        Employee    @relation(fields: [employeeId], references: [id])
+  
+  @@index([orderId])
+  @@index([employeeId])
+  @@index([createdAt])
+}
