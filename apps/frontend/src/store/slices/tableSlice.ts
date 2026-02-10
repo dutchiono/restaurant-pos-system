@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { Table, TableStatus } from '../types/table.types';
-import { tableApi } from '../services/table.api';
+import { Table, TableStatus } from '../../types/table.types';
+import { tableApi } from '../api/table.api';
 
 interface TableState {
   tables: Table[];
@@ -118,8 +118,8 @@ const tableSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Fetch tables
     builder
+      // Fetch tables
       .addCase(fetchTables.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -131,10 +131,8 @@ const tableSlice = createSlice({
       .addCase(fetchTables.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
-      });
-
-    // Fetch single table
-    builder
+      })
+      // Fetch single table
       .addCase(fetchTable.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -146,10 +144,8 @@ const tableSlice = createSlice({
       .addCase(fetchTable.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
-      });
-
-    // Create table
-    builder
+      })
+      // Create table
       .addCase(createTable.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -161,10 +157,8 @@ const tableSlice = createSlice({
       .addCase(createTable.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
-      });
-
-    // Update table
-    builder
+      })
+      // Update table
       .addCase(updateTable.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -182,37 +176,39 @@ const tableSlice = createSlice({
       .addCase(updateTable.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
-      });
-
-    // Update table status
-    builder
+      })
+      // Update table status
+      .addCase(updateTableStatus.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(updateTableStatus.fulfilled, (state, action) => {
-        const index = state.tables.findIndex((t) => t.id === action.payload.id);
-        if (index !== -1) {
-          state.tables[index] = action.payload;
+        state.loading = false;
+        const table = state.tables.find((t) => t.id === action.payload.id);
+        if (table) {
+          table.status = action.payload.status;
         }
         if (state.selectedTable?.id === action.payload.id) {
-          state.selectedTable = action.payload;
+          state.selectedTable.status = action.payload.status;
         }
       })
       .addCase(updateTableStatus.rejected, (state, action) => {
+        state.loading = false;
         state.error = action.payload as string;
-      });
-
-    // Update table position
-    builder
-      .addCase(updateTablePosition.fulfilled, (state, action) => {
-        const index = state.tables.findIndex((t) => t.id === action.payload.id);
-        if (index !== -1) {
-          state.tables[index] = action.payload;
-        }
+      })
+      // Update table position
+      .addCase(updateTablePosition.pending, (state) => {
+        // Don't set loading for optimistic updates
+        state.error = null;
+      })
+      .addCase(updateTablePosition.fulfilled, () => {
+        // Position already updated optimistically, just confirm
       })
       .addCase(updateTablePosition.rejected, (state, action) => {
         state.error = action.payload as string;
-      });
-
-    // Delete table
-    builder
+        // TODO: Revert optimistic update
+      })
+      // Delete table
       .addCase(deleteTable.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -231,5 +227,7 @@ const tableSlice = createSlice({
   },
 });
 
-export const { selectTable, clearError, updateTablePositionOptimistic } = tableSlice.actions;
+export const { selectTable, clearError, updateTablePositionOptimistic } =
+  tableSlice.actions;
+
 export default tableSlice.reducer;
