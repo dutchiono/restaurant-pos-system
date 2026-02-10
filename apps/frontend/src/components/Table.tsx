@@ -16,11 +16,11 @@ const TableComponent: React.FC<TableComponentProps> = ({
 }) => {
   const getStatusColor = (status: TableStatus): string => {
     const colors: Record<TableStatus, string> = {
-      AVAILABLE: '#10b981',
-      OCCUPIED: '#ef4444',
-      RESERVED: '#3b82f6',
-      DIRTY: '#f59e0b',
-      CLEANING: '#8b5cf6',
+      [TableStatus.AVAILABLE]: '#10b981',
+      [TableStatus.OCCUPIED]: '#ef4444',
+      [TableStatus.RESERVED]: '#3b82f6',
+      [TableStatus.DIRTY]: '#f59e0b',
+      [TableStatus.CLEANING]: '#8b5cf6',
     };
     return colors[status];
   };
@@ -32,19 +32,19 @@ const TableComponent: React.FC<TableComponentProps> = ({
     };
 
     switch (shape) {
-      case 'CIRCLE':
+      case TableShape.CIRCLE:
         return {
           ...baseStyles,
           borderRadius: '50%',
         };
-      case 'BOOTH':
+      case TableShape.BOOTH:
         return {
           ...baseStyles,
           borderRadius: '12px',
           border: '3px solid #6b7280',
         };
-      case 'RECTANGLE':
-      case 'SQUARE':
+      case TableShape.RECTANGLE:
+      case TableShape.SQUARE:
       default:
         return {
           ...baseStyles,
@@ -118,7 +118,6 @@ const TableComponent: React.FC<TableComponentProps> = ({
             height: '12px',
             backgroundColor: '#fbbf24',
             borderRadius: '50%',
-            boxShadow: '0 0 4px rgba(251, 191, 36, 0.6)',
           }}
         />
       )}
