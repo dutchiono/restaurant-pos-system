@@ -109,10 +109,11 @@ export const FloorPlanEditor: React.FC<FloorPlanEditorProps> = ({
             onClick={() => onTableClick(table)}
             onMouseDown={(e) => handleTableMouseDown(table.id, e)}
             isDragging={draggingTable === table.id}
-            editorMode={editorMode}
           />
         ))}
       </div>
     </div>
   );
 };
+
+export default FloorPlanEditor;
