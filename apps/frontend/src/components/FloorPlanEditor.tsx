@@ -92,84 +92,57 @@ export const FloorPlanEditor: React.FC<FloorPlanEditorProps> = ({
           width: `${width}px`,
           height: `${height}px`,
           position: 'relative',
+          backgroundColor: '#f5f5f5',
           border: '2px solid #ddd',
-          backgroundColor: '#f9fafb',
+          borderRadius: '8px',
           cursor: editorMode === 'edit' ? 'crosshair' : 'default',
+          overflow: 'hidden',
         }}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onClick={handleFloorPlanClick}
       >
-        {/* Grid lines for alignment */}
-        {editorMode === 'edit' && (
-          <svg
-            width={width}
-            height={height}
-            style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
-          >
-            <defs>
-              <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
-                <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#e5e7eb" strokeWidth="1" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-        )}
-
-        {/* Render all tables */}
         {tables.map((table) => (
           <TableComponent
             key={table.id}
             table={table}
-            isDragging={draggingTable === table.id}
             onMouseDown={(e) => handleTableMouseDown(table.id, e)}
             onClick={() => onTableClick(table)}
+            draggable={editorMode === 'edit'}
+            isDragging={table.id === draggingTable}
           />
         ))}
+        
+        {/* Grid overlay for editor mode */}
+        {editorMode === 'edit' && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: `
+                repeating-linear-gradient(0deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1px, transparent 1px, transparent 20px),
+                repeating-linear-gradient(90deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1px, transparent 1px, transparent 20px)
+              `,
+              pointerEvents: 'none',
+            }}
+          />
+        )}
       </div>
-
-      {/* Legend */}
-      <div className="floor-plan-legend" style={{ marginTop: '20px' }}>
-        <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '10px' }}>
-          Table Status Legend
-        </h3>
-        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-          <StatusIndicator status="AVAILABLE" label="Available" />
-          <StatusIndicator status="OCCUPIED" label="Occupied" />
-          <StatusIndicator status="RESERVED" label="Reserved" />
-          <StatusIndicator status="DIRTY" label="Dirty" />
-          <StatusIndicator status="CLEANING" label="Cleaning" />
+      
+      {/* Editor controls */}
+      {editorMode === 'edit' && (
+        <div className="editor-controls" style={{ marginTop: '16px' }}>
+          <div className="editor-info">
+            <p>Click on empty space to add a new table</p>
+            <p>Drag tables to reposition them</p>
+            <p>Click on a table to edit its properties</p>
+          </div>
         </div>
-      </div>
-    </div>
-  );
-};
-
-const StatusIndicator: React.FC<{ status: TableStatus; label: string }> = ({
-  status,
-  label,
-}) => {
-  const colors = {
-    AVAILABLE: '#10b981',
-    OCCUPIED: '#ef4444',
-    RESERVED: '#3b82f6',
-    DIRTY: '#f59e0b',
-    CLEANING: '#8b5cf6',
-  };
-
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <div
-        style={{
-          width: '20px',
-          height: '20px',
-          backgroundColor: colors[status],
-          borderRadius: '4px',
-          border: '1px solid #ddd',
-        }}
-      />
-      <span style={{ fontSize: '14px' }}>{label}</span>
+      )}
     </div>
   );
 };
