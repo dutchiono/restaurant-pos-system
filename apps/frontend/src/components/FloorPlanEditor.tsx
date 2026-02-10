@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Table, TableStatus } from '../types/table.types';
+import { Table } from '../types/table.types';
 import TableComponent from './Table';
 
 interface FloorPlanEditorProps {
@@ -92,10 +92,10 @@ export const FloorPlanEditor: React.FC<FloorPlanEditorProps> = ({
           width: `${width}px`,
           height: `${height}px`,
           position: 'relative',
-          background: '#f8f9fa',
-          border: '1px solid #dee2e6',
-          borderRadius: '8px',
+          backgroundColor: '#f0f0f0',
+          border: '1px solid #ddd',
           overflow: 'hidden',
+          cursor: editorMode === 'edit' ? 'crosshair' : 'default',
         }}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -109,16 +109,10 @@ export const FloorPlanEditor: React.FC<FloorPlanEditorProps> = ({
             onClick={() => onTableClick(table)}
             onMouseDown={(e) => handleTableMouseDown(table.id, e)}
             isDragging={draggingTable === table.id}
+            editorMode={editorMode}
           />
         ))}
       </div>
-      {editorMode === 'edit' && (
-        <div className="editor-hint">
-          Click an empty space to add a new table, or drag existing tables to move them
-        </div>
-      )}
     </div>
   );
 };
-
-export default FloorPlanEditor;
