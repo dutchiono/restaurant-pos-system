@@ -4,6 +4,7 @@ import { Table as TableType, TableStatus, TableShape } from '../types/table.type
 interface TableComponentProps {
   table: TableType;
   isDragging?: boolean;
+  draggable?: boolean;
   onMouseDown?: (e: React.MouseEvent) => void;
   onClick?: () => void;
 }
@@ -116,8 +117,9 @@ const TableComponent: React.FC<TableComponentProps> = ({
             right: '4px',
             width: '12px',
             height: '12px',
-            backgroundColor: '#fbbf24',
             borderRadius: '50%',
+            backgroundColor: 'white',
+            border: '2px solid rgba(0,0,0,0.2)',
           }}
         />
       )}
