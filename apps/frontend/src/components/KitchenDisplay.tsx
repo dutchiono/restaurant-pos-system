@@ -2,11 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Order, OrderItem, OrderItemStatus } from '../types/order.types';
 import { socketClient } from '../lib/socket';
 
-interface KitchenDisplayProps {
-  restaurantId: string;
-}
-
-export const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ restaurantId: _restaurantId }) => {
+export const KitchenDisplay: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<'all' | 'pending' | 'preparing'>('all');
 
