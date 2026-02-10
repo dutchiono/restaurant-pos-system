@@ -6,7 +6,7 @@ interface KitchenDisplayProps {
   restaurantId: string;
 }
 
-export const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ restaurantId }) => {
+export const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ restaurantId: _restaurantId }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<'all' | 'pending' | 'preparing'>('all');
 
@@ -104,10 +104,10 @@ export const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ restaurantId }) 
         </div>
       </div>
 
-      <div className="kds-orders">
+      <div className="orders-grid">
         {activeOrders.length === 0 ? (
-          <div className="empty-state">
-            <p>No active orders in kitchen</p>
+          <div className="no-orders">
+            <p>No active orders</p>
           </div>
         ) : (
           activeOrders.map((order) => {
@@ -115,41 +115,34 @@ export const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ restaurantId }) 
             if (filteredItems.length === 0) return null;
 
             return (
-              <div key={order.id} className="kds-order-card">
-                <div className="kds-order-header">
+              <div key={order.id} className="order-card">
+                <div className="order-header">
                   <div className="order-info">
-                    <h3>Table {order.table.number}</h3>
+                    <h3>Order #{order.id.slice(0, 8)}</h3>
                     <span className="order-time">
-                      {new Date(order.createdAt).toLocaleTimeString('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
+                      {new Date(order.createdAt).toLocaleTimeString()}
                     </span>
                   </div>
-                  <div className="elapsed-time">
-                    {Math.floor(
-                      (Date.now() - new Date(order.createdAt).getTime()) / 60000
-                    )}{' '}
-                    min
-                  </div>
+                  {order.table && (
+                    <span className="table-number">
+                      Table #{order.table.number}
+                    </span>
+                  )}
                 </div>
 
-                <div className="kds-items">
+                <div className="order-items">
                   {filteredItems.map((item) => (
                     <div
                       key={item.id}
-                      className={`kds-item ${item.status.toLowerCase()}`}
+                      className={`item ${item.status.toLowerCase()}`}
                     >
-                      <div className="item-qty">{item.quantity}x</div>
-                      <div className="item-details">
-                        <h4>{item.menuItem.name}</h4>
+                      <div className="item-info">
+                        <span className="item-quantity">{item.quantity}x</span>
+                        <span className="item-name">
+                          {item.menuItem.name}
+                        </span>
                         {item.notes && (
-                          <div className="item-notes">Note: {item.notes}</div>
-                        )}
-                        {item.modifiers && (
-                          <div className="item-modifiers">
-                            Mods: {JSON.stringify(item.modifiers)}
-                          </div>
+                          <span className="item-notes">{item.notes}</span>
                         )}
                       </div>
                       <div className="item-actions">
@@ -161,7 +154,7 @@ export const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ restaurantId }) 
                                 OrderItemStatus.PREPARING
                               )
                             }
-                            className="btn btn-start"
+                            className="btn-start"
                           >
                             Start
                           </button>
@@ -171,9 +164,9 @@ export const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ restaurantId }) 
                             onClick={() =>
                               handleItemStatusChange(item.id, OrderItemStatus.READY)
                             }
-                            className="btn btn-ready"
+                            className="btn-ready"
                           >
-                            Ready
+                            Mark Ready
                           </button>
                         )}
                       </div>
@@ -188,3 +181,5 @@ export const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ restaurantId }) 
     </div>
   );
 };
+
+export default KitchenDisplay;
