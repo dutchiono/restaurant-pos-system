@@ -15,7 +15,7 @@ const TableComponent: React.FC<TableComponentProps> = ({
   onClick,
 }) => {
   const getStatusColor = (status: TableStatus): string => {
-    const colors = {
+    const colors: Record<TableStatus, string> = {
       AVAILABLE: '#10b981',
       OCCUPIED: '#ef4444',
       RESERVED: '#3b82f6',
@@ -118,29 +118,9 @@ const TableComponent: React.FC<TableComponentProps> = ({
             height: '12px',
             backgroundColor: '#fbbf24',
             borderRadius: '50%',
-            border: '2px solid white',
-            animation: 'pulse 2s infinite',
+            boxShadow: '0 0 4px rgba(251, 191, 36, 0.6)',
           }}
-          title="Active order"
         />
-      )}
-
-      {/* Section indicator */}
-      {table.section && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '4px',
-            left: '4px',
-            fontSize: '10px',
-            backgroundColor: 'rgba(0,0,0,0.3)',
-            color: 'white',
-            padding: '2px 6px',
-            borderRadius: '4px',
-          }}
-        >
-          {table.section}
-        </div>
       )}
     </div>
   );
