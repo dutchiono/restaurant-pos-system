@@ -15,14 +15,14 @@ const TableComponent: React.FC<TableComponentProps> = ({
   onClick,
 }) => {
   const getStatusColor = (status: TableStatus): string => {
-    const colors: Record<TableStatus, string> = {
-      [TableStatus.AVAILABLE]: '#10b981',
-      [TableStatus.OCCUPIED]: '#ef4444',
-      [TableStatus.RESERVED]: '#3b82f6',
-      [TableStatus.DIRTY]: '#f59e0b',
-      [TableStatus.CLEANING]: '#8b5cf6',
+    const colors: { [key: string]: string } = {
+      'AVAILABLE': '#10b981',
+      'OCCUPIED': '#ef4444',
+      'RESERVED': '#3b82f6',
+      'DIRTY': '#f59e0b',
+      'CLEANING': '#8b5cf6',
     };
-    return colors[status];
+    return colors[status] || '#6b7280';
   };
 
   const getShapeStyles = (shape: TableShape, width: number, height: number) => {
